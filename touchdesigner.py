@@ -31,15 +31,6 @@ structure = {
     'depth': 3
 }
 
-controls_text = """
-Hand Tracking Controls:
-- Index & Thumb distance: Controls Scale
-- Wrist Rotation: Controls Rotation Speed
-- Left Hand Distance: Controls Density
-- Right Hand Distance: Controls Depth
-- Both Hand Distance: Controls Color Variations
-"""
-
 def draw_mandala(center, scale, rotation, density, depth, color):
     if depth <= 0:
         return
@@ -63,10 +54,10 @@ while running:
     rgb_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
     result = hands.process(rgb_frame)
 
-    screen.fill((0, 0, 0, 10))  # Create a fluid blending effect
+    screen.fill((0, 0, 0))
 
+    hand_positions = []
     if result.multi_hand_landmarks:
-        hand_data = []
         for hand_landmarks in result.multi_hand_landmarks:
             lm_list = [(lm.x * WIDTH, lm.y * HEIGHT) for lm in hand_landmarks.landmark]
             index_tip = lm_list[8]
@@ -75,36 +66,27 @@ while running:
 
             distance = calc_distance(index_tip, thumb_tip)
             rotation = np.arctan2(index_tip[1] - wrist[1], index_tip[0] - wrist[0])
-
-            hand_data.append({'distance': distance, 'rotation': rotation})
-
-            cv2.putText(frame, f"Distance: {int(distance)}", (int(index_tip[0]), int(index_tip[1]) - 20),
-                        cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 255, 0), 2)
-            cv2.putText(frame, f"Rotation: {round(rotation, 2)}", (int(index_tip[0]), int(index_tip[1]) - 50),
-                        cv2.FONT_HERSHEY_SIMPLEX, 0.6, (255, 0, 0), 2)
-
+            hand_positions.append({'pos': wrist, 'distance': distance, 'rotation': rotation})
+            
             mp_drawing.draw_landmarks(frame, hand_landmarks, mp_hands.HAND_CONNECTIONS)
-
-        if len(hand_data) == 2:  # Combine both hands' inputs
-            structure['scale'] = int((hand_data[0]['distance'] + hand_data[1]['distance']) / 2 * 2)
-            structure['rotation'] += (hand_data[0]['rotation'] + hand_data[1]['rotation']) / 10
-            structure['density'] = max(6, int(hand_data[0]['distance'] // 10) % 20)
-            structure['depth'] = max(2, int(hand_data[1]['distance'] // 30) % 5)
-            structure['color'] = (
-                int((hand_data[0]['distance'] * 2) % 255),
-                int((hand_data[1]['distance'] * 2) % 255),
-                200
-            )
     
-    # Draw fractal mandala pattern
+    if len(hand_positions) == 2:
+        hand1, hand2 = hand_positions
+        structure['center'] = (
+            int((hand1['pos'][0] + hand2['pos'][0]) / 2),
+            int((hand1['pos'][1] + hand2['pos'][1]) / 2)
+        )
+        structure['scale'] = int((hand1['distance'] + hand2['distance']) / 2 * 2)
+        structure['rotation'] += (hand1['rotation'] + hand2['rotation']) / 10
+        structure['density'] = max(6, int(hand1['distance'] // 10) % 20)
+        structure['depth'] = max(2, int(hand2['distance'] // 30) % 5)
+        structure['color'] = (
+            int((hand1['distance'] * 2) % 255),
+            int((hand2['distance'] * 2) % 255),
+            200
+        )
+    
     draw_mandala(structure['center'], structure['scale'], structure['rotation'], structure['density'], structure['depth'], structure['color'])
-    
-    # Display control instructions
-    font = pygame.font.Font(None, 24)
-    lines = controls_text.split("\n")
-    for i, line in enumerate(lines):
-        text_surface = font.render(line, True, (255, 255, 255))
-        screen.blit(text_surface, (10, 10 + i * 20))
     
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
