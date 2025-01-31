@@ -25,6 +25,12 @@ def calc_distance(lm1, lm2):
 # Psychedelic shapes list
 shapes = []
 
+# Define hand-based properties
+hand_properties = {
+    'left': {'color': (255, 0, 0), 'size_multiplier': 2},
+    'right': {'color': (0, 255, 0), 'size_multiplier': 3}
+}
+
 running = True
 while running:
     success, frame = cap.read()
@@ -38,8 +44,9 @@ while running:
     screen.fill((0, 0, 0))  # Clear screen
 
     if result.multi_hand_landmarks:
-        for hand_landmarks in result.multi_hand_landmarks:
+        for hand_no, hand_landmarks in enumerate(result.multi_hand_landmarks):
             lm_list = [(lm.x * WIDTH, lm.y * HEIGHT) for lm in hand_landmarks.landmark]
+            hand_label = 'left' if hand_no == 1 else 'right'
 
             # Extract key points
             index_tip = lm_list[8]
@@ -50,9 +57,12 @@ while running:
             distance = calc_distance(index_tip, thumb_tip)
             rotation = np.arctan2(index_tip[1] - wrist[1], index_tip[0] - wrist[0])
 
-            # Generate psychedelic shape properties
-            color = (random.randint(0, 255), random.randint(0, 255), random.randint(0, 255))
-            size = int(distance * 2)
+            # Define manipulation properties based on hand and rotation
+            size_multiplier = hand_properties[hand_label]['size_multiplier']
+            base_color = hand_properties[hand_label]['color']
+            color_variation = (int(rotation * 100) % 255, int(distance) % 255, 200)
+            color = tuple((b + v) % 255 for b, v in zip(base_color, color_variation))
+            size = int(distance * size_multiplier)
             angle = rotation * 100
 
             # Append new shape to list
