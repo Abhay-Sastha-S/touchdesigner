@@ -41,7 +41,7 @@ while running:
     rgb_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
     result = hands.process(rgb_frame)
 
-    screen.fill((0, 0, 0))  # Clear screen
+    screen.fill((0, 0, 0, 10))  # Create a fluid blending effect
 
     if result.multi_hand_landmarks:
         for hand_no, hand_landmarks in enumerate(result.multi_hand_landmarks):
@@ -73,16 +73,22 @@ while running:
                 'angle': angle
             })
 
+            # Display measurements on hand tracking window
+            cv2.putText(frame, f"Distance: {int(distance)}", (int(index_tip[0]), int(index_tip[1]) - 20), 
+                        cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 255, 0), 2)
+            cv2.putText(frame, f"Rotation: {round(rotation, 2)}", (int(index_tip[0]), int(index_tip[1]) - 50), 
+                        cv2.FONT_HERSHEY_SIMPLEX, 0.6, (255, 0, 0), 2)
+
             mp_drawing.draw_landmarks(frame, hand_landmarks, mp_hands.HAND_CONNECTIONS)
 
     # Draw psychedelic shapes
-    for shape in shapes:
+    for shape in shapes[-50:]:  # Keep last 50 shapes for smoother visuals
         pygame.draw.polygon(screen, shape['color'], [
             (shape['pos'][0] + shape['size'] * np.cos(shape['angle']), shape['pos'][1] + shape['size'] * np.sin(shape['angle'])),
             (shape['pos'][0] - shape['size'] * np.cos(shape['angle']), shape['pos'][1] - shape['size'] * np.sin(shape['angle'])),
             (shape['pos'][0] + shape['size'] * np.sin(shape['angle']), shape['pos'][1] - shape['size'] * np.cos(shape['angle'])),
             (shape['pos'][0] - shape['size'] * np.sin(shape['angle']), shape['pos'][1] + shape['size'] * np.cos(shape['angle']))
-        ])
+        ], 2)
 
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
