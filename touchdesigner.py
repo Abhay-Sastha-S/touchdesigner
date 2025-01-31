@@ -26,12 +26,19 @@ structure = {
     'center': (WIDTH // 2, HEIGHT // 2),
     'scale': 100,
     'rotation': 0,
-    'color': (255, 255, 255),
     'density': 6,
-    'depth': 3
+    'depth': 3,
+    'color_scheme': 0
 }
 
-def draw_mandala(center, scale, rotation, density, depth, color):
+color_schemes = [
+    [(255, 0, 0), (0, 255, 0), (0, 0, 255)],  # RGB
+    [(255, 255, 0), (255, 0, 255), (0, 255, 255)],  # CMY
+    [(255, 128, 0), (128, 0, 255), (0, 255, 128)],  # Custom
+    [(200, 200, 200), (100, 100, 100), (50, 50, 50)]  # Grayscale
+]
+
+def draw_mandala(center, scale, rotation, density, depth):
     if depth <= 0:
         return
     points = []
@@ -40,9 +47,10 @@ def draw_mandala(center, scale, rotation, density, depth, color):
         x = center[0] + scale * math.cos(angle)
         y = center[1] + scale * math.sin(angle)
         points.append((x, y))
+    color = color_schemes[structure['color_scheme']][depth % len(color_schemes[0])]
     pygame.draw.polygon(screen, color, points, 2)
     for p in points:
-        draw_mandala(p, scale * 0.5, rotation + 0.2, density, depth - 1, color)
+        draw_mandala(p, scale * 0.5, rotation + 0.2, density, depth - 1)
 
 running = True
 while running:
@@ -80,13 +88,9 @@ while running:
         structure['rotation'] += (hand1['rotation'] + hand2['rotation']) / 10
         structure['density'] = max(6, int(hand1['distance'] // 10) % 20)
         structure['depth'] = max(2, int(hand2['distance'] // 30) % 5)
-        structure['color'] = (
-            int((hand1['distance'] * 2) % 255),
-            int((hand2['distance'] * 2) % 255),
-            200
-        )
+        structure['color_scheme'] = int(hand1['distance'] // 50) % len(color_schemes)  # Switch color scheme dynamically
     
-    draw_mandala(structure['center'], structure['scale'], structure['rotation'], structure['density'], structure['depth'], structure['color'])
+    draw_mandala(structure['center'], structure['scale'], structure['rotation'], structure['density'], structure['depth'])
     
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
