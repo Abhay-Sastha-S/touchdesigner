@@ -31,6 +31,15 @@ structure = {
     'depth': 3
 }
 
+controls_text = """
+Hand Tracking Controls:
+- Index & Thumb distance: Controls Scale
+- Wrist Rotation: Controls Rotation Speed
+- Left Hand Distance: Controls Density
+- Right Hand Distance: Controls Depth
+- Both Hand Distance: Controls Color Variations
+"""
+
 def draw_mandala(center, scale, rotation, density, depth, color):
     if depth <= 0:
         return
@@ -89,6 +98,13 @@ while running:
     
     # Draw fractal mandala pattern
     draw_mandala(structure['center'], structure['scale'], structure['rotation'], structure['density'], structure['depth'], structure['color'])
+    
+    # Display control instructions
+    font = pygame.font.Font(None, 24)
+    lines = controls_text.split("\n")
+    for i, line in enumerate(lines):
+        text_surface = font.render(line, True, (255, 255, 255))
+        screen.blit(text_surface, (10, 10 + i * 20))
     
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
