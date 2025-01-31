@@ -2,6 +2,7 @@ import cv2
 import mediapipe as mp
 import numpy as np
 import pygame
+import random
 
 # Initialize MediaPipe Hands
 mp_hands = mp.solutions.hands
@@ -20,6 +21,9 @@ cap = cv2.VideoCapture(0)
 # Function to calculate distance between two landmarks
 def calc_distance(lm1, lm2):
     return np.sqrt((lm1[0] - lm2[0]) ** 2 + (lm1[1] - lm2[1]) ** 2)
+
+# Psychedelic shapes list
+shapes = []
 
 running = True
 while running:
@@ -46,12 +50,29 @@ while running:
             distance = calc_distance(index_tip, thumb_tip)
             rotation = np.arctan2(index_tip[1] - wrist[1], index_tip[0] - wrist[0])
 
-            # Control parameters for geometric art
-            color = (int(distance) % 255, int(rotation * 100) % 255, 200)
-            pygame.draw.circle(screen, color, (int(index_tip[0]), int(index_tip[1])), int(distance / 10))
-            pygame.draw.line(screen, color, (int(wrist[0]), int(wrist[1])), (int(index_tip[0]), int(index_tip[1])), 3)
+            # Generate psychedelic shape properties
+            color = (random.randint(0, 255), random.randint(0, 255), random.randint(0, 255))
+            size = int(distance * 2)
+            angle = rotation * 100
+
+            # Append new shape to list
+            shapes.append({
+                'pos': (int(index_tip[0]), int(index_tip[1])),
+                'size': size,
+                'color': color,
+                'angle': angle
+            })
 
             mp_drawing.draw_landmarks(frame, hand_landmarks, mp_hands.HAND_CONNECTIONS)
+
+    # Draw psychedelic shapes
+    for shape in shapes:
+        pygame.draw.polygon(screen, shape['color'], [
+            (shape['pos'][0] + shape['size'] * np.cos(shape['angle']), shape['pos'][1] + shape['size'] * np.sin(shape['angle'])),
+            (shape['pos'][0] - shape['size'] * np.cos(shape['angle']), shape['pos'][1] - shape['size'] * np.sin(shape['angle'])),
+            (shape['pos'][0] + shape['size'] * np.sin(shape['angle']), shape['pos'][1] - shape['size'] * np.cos(shape['angle'])),
+            (shape['pos'][0] - shape['size'] * np.sin(shape['angle']), shape['pos'][1] + shape['size'] * np.cos(shape['angle']))
+        ])
 
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
